@@ -1,0 +1,96 @@
+import tkinter as tk
+from tkinter import messagebox
+import json
+import os
+
+FILENAME = "attendance.json"
+
+# Load data
+if os.path.exists(FILENAME):
+    with open(FILENAME, "r") as f:
+        students = json.load(f)
+else:
+    students = {}
+
+def save_data():
+    with open(FILENAME, "w") as f:
+        json.dump(students, f)
+
+# ---------------- ADD STUDENT ----------------
+def add_student():
+    roll = roll_entry.get()
+    name = name_entry.get()
+
+    if roll == "" or name == "":
+        messagebox.showwarning("Warning", "Please enter all details")
+        return
+
+    if roll not in students:
+        students[roll] = {"name": name, "attended": 0, "total": 0}
+        save_data()
+        messagebox.showinfo("Success", "Student added successfully")
+    else:
+        messagebox.showerror("Error", "Roll number already exists")
+
+# ---------------- MARK ATTENDANCE ----------------
+def mark_attendance():
+    if not students:
+        messagebox.showwarning("Warning", "No students found")
+        return
+
+    attendance_window = tk.Toplevel(root)
+    attendance_window.title("Mark Attendance")
+
+    for roll, data in students.items():
+        frame = tk.Frame(attendance_window)
+        frame.pack(pady=5)
+
+        label = tk.Label(frame, text=f"{data['name']} ({roll})")
+        label.pack(side="left")
+
+        def mark_present(r=roll):
+            students[r]["total"] += 1
+            students[r]["attended"] += 1
+            save_data()
+
+        def mark_absent(r=roll):
+            students[r]["total"] += 1
+            save_data()
+
+        tk.Button(frame, text="Present", bg="green", fg="white",
+                  command=mark_present).pack(side="left", padx=5)
+
+        tk.Button(frame, text="Absent", bg="red", fg="white",
+                  command=mark_absent).pack(side="left", padx=5)
+
+# ---------------- VIEW ATTENDANCE ----------------
+def view_attendance():
+    if not students:
+        messagebox.showwarning("Warning", "No data available")
+        return
+
+    report = ""
+    for roll, data in students.items():
+        percent = (data["attended"] / data["total"] * 100) if data["total"] > 0 else 0
+        report += f"{data['name']} ({roll}) → {percent:.2f}% ({data['attended']}/{data['total']})\n"
+
+    messagebox.showinfo("Attendance Report", report)
+
+# ---------------- MAIN WINDOW ----------------
+root = tk.Tk()
+root.title("Student Attendance System")
+root.geometry("350x300")
+
+tk.Label(root, text="Roll No").pack()
+roll_entry = tk.Entry(root)
+roll_entry.pack()
+
+tk.Label(root, text="Name").pack()
+name_entry = tk.Entry(root)
+name_entry.pack()
+
+tk.Button(root, text="Add Student", command=add_student).pack(pady=5)
+tk.Button(root, text="Mark Attendance", command=mark_attendance).pack(pady=5)
+tk.Button(root, text="View Attendance", command=view_attendance).pack(pady=5)
+
+root.mainloop()
